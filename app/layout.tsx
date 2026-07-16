@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Pastelaria do Zeca | Pastel de verdade",
+  title: "Pastelaria Recanto | Pastel de verdade",
   description: "Pastéis crocantes, recheados e feitos na hora. Peça para entrega ou retirada.",
   icons: {
     icon: "/favicon.svg",
