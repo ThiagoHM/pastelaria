@@ -878,7 +878,27 @@ function Checkout({
 
 function PixPending({result}:{result:any}){
   const payment=result.payment;
-  return <div className="py-4 text-center"><p className="eyebrow">PAGAMENTO PIX</p><h2>Escaneie o QR Code</h2><p className="text-sm text-[#666]">O pedido será confirmado automaticamente após o pagamento.</p>{payment.qrCodeBase64&&<img className="mx-auto my-5 h-64 w-64" src={`data:image/png;base64,${payment.qrCodeBase64}`} alt="QR Code Pix"/>}<label className="note text-left">Pix copia e cola<textarea readOnly value={payment.qrCode||""}/></label><button className="outline wide" onClick={()=>navigator.clipboard.writeText(payment.qrCode||"")}>Copiar código Pix</button></div>
+  const [copyStatus,setCopyStatus]=useState("");
+  const code=payment.qrCode||"";
+  async function copyPix(){
+    if(!code){setCopyStatus("Código Pix indisponível.");return;}
+    try{
+      if(!navigator.clipboard?.writeText) throw new Error("Clipboard indisponível");
+      await navigator.clipboard.writeText(code);
+    }catch{
+      const field=document.createElement("textarea");
+      field.value=code;
+      field.style.position="fixed";
+      field.style.opacity="0";
+      document.body.appendChild(field);
+      field.focus();
+      field.select();
+      document.execCommand("copy");
+      field.remove();
+    }
+    setCopyStatus("Código Pix copiado!");
+  }
+  return <div className="min-h-full py-4 pb-24 text-center"><p className="eyebrow">PAGAMENTO PIX</p><h2>Escaneie o QR Code</h2><p className="text-sm text-[#666]">O pedido será confirmado automaticamente após o pagamento.</p>{payment.qrCodeBase64&&<img className="mx-auto my-5 h-auto w-[min(15rem,70vw)]" src={`data:image/png;base64,${payment.qrCodeBase64}`} alt="QR Code Pix"/>}<label className="note text-left">Pix copia e cola<textarea className="max-h-28 break-all text-xs" readOnly value={code} onFocus={(event)=>event.currentTarget.select()} onClick={(event)=>event.currentTarget.select()}/></label>{copyStatus&&<p className="my-3 text-sm font-bold text-[#24652c]" role="status">{copyStatus}</p>}<div className="sticky bottom-0 mt-4 bg-[#fffaf1] py-3"><button type="button" className="outline wide min-h-12" disabled={!code} onClick={copyPix}>Copiar código Pix</button></div></div>
 }
 function Tracking({
   order,
