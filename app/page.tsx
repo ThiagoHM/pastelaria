@@ -10,6 +10,10 @@ const mercadoPagoTestMode = mercadoPagoPublicKey?.startsWith("TEST-") ?? false;
 if (mercadoPagoPublicKey) initMercadoPago(mercadoPagoPublicKey, { locale: "pt-BR" });
 
 const paymentStatusMessage = (status?: string, detail?: string) => {
+  if (status === "rejected" && mercadoPagoTestMode)
+    return "Pagamento de teste recusado. Para simular uma aprovação, use um cartão de teste do Mercado Pago, informe APRO como nome do titular e CPF 12345678909.";
+  if (status === "rejected" && detail === "cc_rejected_other_reason")
+    return "Pagamento recusado pela análise de segurança. Tente outro cartão ou entre em contato com o banco emissor.";
   if (status === "rejected")
     return `Pagamento recusado pelo Mercado Pago${detail ? ` (${detail})` : ""}. Confira os dados ou use outro cartão.`;
   if (status === "cancelled") return "Pagamento cancelado. Tente novamente.";
