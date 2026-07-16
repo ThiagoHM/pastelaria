@@ -701,7 +701,7 @@ function AuthModal({
   return (
     <div className="overlay auth-overlay" onClick={close}>
       <form
-        className="modal auth-modal"
+        className="modal auth-modal max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain max-sm:w-[calc(100%-1rem)] max-sm:p-5 max-sm:[&_label]:my-2"
         onSubmit={submit}
         onClick={(e) => e.stopPropagation()}
       >
