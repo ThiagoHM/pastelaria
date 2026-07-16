@@ -1,0 +1,14 @@
+# O backend NestJS e publicado separadamente no Render.
+api/**
+
+# Arquivos auxiliares que nao fazem parte do frontend Next.js.
+build/**
+db/**
+drizzle/**
+examples/**
+tests/**
+worker/**
+docker-compose.yml
+drizzle.config.ts
+vite.config.ts
+render.yaml
