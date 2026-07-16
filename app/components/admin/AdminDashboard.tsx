@@ -51,16 +51,20 @@ export function AdminDashboard({
     [deliveryFeeDraft,setDeliveryFeeDraft]=useState("5"),
     [detail,setDetail]=useState<any|null>(null);
   useEffect(()=>{api<any>("/store/settings").then(value=>{setStore(value);setDeliveryFeeDraft(String(value.deliveryFee))})},[]);
+  const paidOrders = useMemo(
+    () => orders.filter((order) => order.paymentStatus === "APPROVED"),
+    [orders],
+  );
   const visible = useMemo(
     () =>
-      orders.filter((o) =>
+      paidOrders.filter((o) =>
         queue === "done"
           ? ["COMPLETED", "CANCELLED"].includes(o.status)
           : !["COMPLETED", "CANCELLED"].includes(o.status),
       ),
-    [orders, queue],
+    [paidOrders, queue],
   );
-  const revenue = orders
+  const revenue = paidOrders
     .filter((o) => o.status === "COMPLETED")
     .reduce((s, o) => s + Number(o.total), 0);
   async function saveStatus(order: any) {
@@ -206,7 +210,7 @@ export function AdminDashboard({
             <span>Em andamento</span>
             <b>
               {
-                orders.filter(
+                paidOrders.filter(
                   (o) => !["COMPLETED", "CANCELLED"].includes(o.status),
                 ).length
               }
@@ -216,14 +220,14 @@ export function AdminDashboard({
             <span>Atenção</span>
             <b>
               {
-                orders.filter((o) => ["DELAYED", "PROBLEM"].includes(o.status))
+                paidOrders.filter((o) => ["DELAYED", "PROBLEM"].includes(o.status))
                   .length
               }
             </b>
           </div>
           <div>
             <span>Concluídos</span>
-            <b>{orders.filter((o) => o.status === "COMPLETED").length}</b>
+            <b>{paidOrders.filter((o) => o.status === "COMPLETED").length}</b>
           </div>
           <div>
             <span>Faturamento concluído</span>
@@ -245,7 +249,7 @@ export function AdminDashboard({
                 Em andamento{" "}
                 <span>
                   {
-                    orders.filter(
+                    paidOrders.filter(
                       (o) => !["COMPLETED", "CANCELLED"].includes(o.status),
                     ).length
                   }
@@ -258,7 +262,7 @@ export function AdminDashboard({
                 Concluídos{" "}
                 <span>
                   {
-                    orders.filter((o) =>
+                    paidOrders.filter((o) =>
                       ["COMPLETED", "CANCELLED"].includes(o.status),
                     ).length
                   }
@@ -302,7 +306,12 @@ export function AdminDashboard({
                       {o.observation || "Sem observação"}
                     </small>
                   </span>
-                  <b>{money(o.total)}</b>
+                  <b>
+                    {money(o.total)}
+                    <small className="mt-1 block text-[10px] font-bold uppercase tracking-wide text-green-700">
+                      &#10003; Pagamento concluído
+                    </small>
+                  </b>
                   <select
                     className={`status-select state-${drafts[o.id] || o.status}`}
                     value={drafts[o.id] || o.status}

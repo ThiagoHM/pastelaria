@@ -156,7 +156,10 @@ export class OrdersService {
     });
   }
   all() {
-    return this.orders.find({ order: { createdAt: "DESC" } });
+    return this.orders.find({
+      where: { paymentStatus: PaymentStatus.APPROVED },
+      order: { createdAt: "DESC" },
+    });
   }
   async byId(id: string, user: { sub: string; role: UserRole }) {
     const order = await this.orders.findOne({ where: { id } });
