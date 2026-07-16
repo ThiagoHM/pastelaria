@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { IsObject } from "class-validator";
 import MercadoPagoConfig, { Payment } from "mercadopago";
@@ -24,6 +24,7 @@ export class ProcessPaymentDto {
 
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
   private client: Payment;
   constructor(
     private config: ConfigService,
@@ -41,6 +42,17 @@ export class PaymentsService {
       : status === "rejected" || status === "cancelled"
         ? PaymentStatus.FAILED
         : PaymentStatus.PENDING;
+  }
+  private errorMessage(error: any) {
+    const response = error?.response?.data;
+    const cause = response?.cause?.[0];
+    return (
+      cause?.description ||
+      cause?.code ||
+      response?.message ||
+      error?.message ||
+      "O Mercado Pago não conseguiu processar o pagamento"
+    );
   }
   async process(user: any, dto: ProcessPaymentDto) {
     const order = await this.orders.create(user.sub, dto.order);
@@ -82,15 +94,17 @@ export class PaymentsService {
         },
       };
     } catch (error: any) {
+      const message = this.errorMessage(error);
+      this.logger.error(
+        `Falha no pagamento do pedido ${order.code}: ${message}`,
+      );
       await this.orders.payment(
         order.id,
         "",
         PaymentStatus.FAILED,
-        "integration_error",
+        message,
       );
-      throw new BadRequestException(
-        error?.message || "O Mercado Pago não conseguiu processar o pagamento",
-      );
+      throw new BadRequestException(message);
     }
   }
   async refresh(id: string) {

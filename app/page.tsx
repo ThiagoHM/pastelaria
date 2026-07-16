@@ -6,6 +6,7 @@ import { MyOrdersModal } from "./components/orders/MyOrdersModal";
 import { initMercadoPago, Payment } from "@mercadopago/sdk-react";
 
 const mercadoPagoPublicKey = process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY;
+const mercadoPagoTestMode = mercadoPagoPublicKey?.startsWith("TEST-") ?? false;
 if (mercadoPagoPublicKey) initMercadoPago(mercadoPagoPublicKey, { locale: "pt-BR" });
 
 type Product = {
@@ -314,7 +315,7 @@ export default function Home() {
           <a href="#about">Nossa história</a>
           <a href="#contact">Contato</a>
         </nav>
-        <div className="flex items-center gap-2 max-sm:w-full max-sm:justify-end">
+        <div className="flex flex-wrap items-center justify-end gap-2 max-sm:w-full max-sm:justify-between">
           {session?.user.role === "ADMIN" && (
             <button
               className="rounded-sm border border-[#c92b25] bg-transparent px-4 py-2.5 text-sm font-extrabold text-[#c92b25] transition-colors hover:bg-[#c92b25] hover:text-white"
@@ -329,7 +330,7 @@ export default function Home() {
             </button>
           )}
           <button
-            className="border-0 bg-transparent px-3 py-2 text-sm font-bold text-[#29251f] hover:text-[#c92b25] max-sm:hidden"
+            className="border-0 bg-transparent px-3 py-2 text-sm font-bold text-[#29251f] hover:text-[#c92b25] max-sm:px-1 max-sm:text-xs"
             onClick={() =>
               session ? logout() : (setAuthAdmin(false), setAuthOpen(true))
             }
@@ -860,6 +861,7 @@ function Checkout({
         <b>{money(total)}</b>
       </div>
       <h4>Pagamento seguro</h4>
+      {mercadoPagoTestMode&&<p className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">Ambiente de testes: use apenas usuários e cartões de teste do Mercado Pago. Nenhuma cobrança real será realizada.</p>}
       {paymentError&&<p className="form-error">{paymentError}</p>}
       {mercadoPagoPublicKey ? (
         <Payment
