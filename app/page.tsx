@@ -9,6 +9,13 @@ const mercadoPagoPublicKey = process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY;
 const mercadoPagoTestMode = mercadoPagoPublicKey?.startsWith("TEST-") ?? false;
 if (mercadoPagoPublicKey) initMercadoPago(mercadoPagoPublicKey, { locale: "pt-BR" });
 
+const paymentStatusMessage = (status?: string, detail?: string) => {
+  if (status === "rejected")
+    return `Pagamento recusado pelo Mercado Pago${detail ? ` (${detail})` : ""}. Confira os dados ou use outro cartão.`;
+  if (status === "cancelled") return "Pagamento cancelado. Tente novamente.";
+  return "Pagamento em análise. O pedido aparecerá para a pastelaria assim que for aprovado.";
+};
+
 type Product = {
   id: string;
   name: string;
@@ -261,6 +268,10 @@ export default function Home() {
       );
       if(result.payment.status==="approved"){
         setCurrentOrder(result.order);setCartOpen(false);setCart([]);setSelectedSauceIds([]);show("Pagamento aprovado e pedido confirmado!");
+      } else if (["rejected", "cancelled"].includes(result.payment.status)) {
+        throw new Error(paymentStatusMessage(result.payment.status, result.payment.statusDetail));
+      } else {
+        show(paymentStatusMessage(result.payment.status, result.payment.statusDetail));
       }
       return result;
     } catch (e) {
@@ -805,7 +816,12 @@ function Checkout({
 }) {
   const [paymentResult,setPaymentResult]=useState<any|null>(null);
   const [paymentError,setPaymentError]=useState("");
-  if(paymentResult?.payment?.status==="pending") return <PixPending result={paymentResult} />;
+  if(paymentResult && paymentResult.payment?.status !== "approved") {
+    const isPix = Boolean(paymentResult.payment?.qrCode);
+    return isPix
+      ? <PixPending result={paymentResult} />
+      : <CardPending result={paymentResult} back={() => setPaymentResult(null)} />;
+  }
   return (
     <>
       <button className="back" onClick={back}>
@@ -861,7 +877,7 @@ function Checkout({
         <b>{money(total)}</b>
       </div>
       <h4>Pagamento seguro</h4>
-      {mercadoPagoTestMode&&<p className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">Ambiente de testes: use apenas usuários e cartões de teste do Mercado Pago. Nenhuma cobrança real será realizada.</p>}
+      {mercadoPagoTestMode&&<p className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-xs font-semibold text-amber-900">Ambiente de testes: cartões reais não são aprovados. Use um cartão de teste do Mercado Pago; nenhuma cobrança real será realizada.</p>}
       {paymentError&&<p className="form-error">{paymentError}</p>}
       {mercadoPagoPublicKey ? (
         <Payment
@@ -874,6 +890,10 @@ function Checkout({
       ) : <p className="form-error">Public Key do Mercado Pago não configurada.</p>}
     </>
   );
+}
+
+function CardPending({result,back}:{result:any;back:()=>void}){
+  return <div className="min-h-full py-8 text-center"><p className="eyebrow">PAGAMENTO COM CARTÃO</p><h2>Pagamento em análise</h2><p className="mx-auto max-w-md text-sm leading-6 text-[#666]">{paymentStatusMessage(result.payment?.status,result.payment?.statusDetail)}</p><p className="mt-4 text-xs text-[#777]">O pedido ainda não foi enviado para preparação. Quando o Mercado Pago aprovar, ele será liberado automaticamente no painel administrativo.</p><button type="button" className="outline wide mt-6" onClick={back}>Tentar outro pagamento</button></div>;
 }
 
 function PixPending({result}:{result:any}){

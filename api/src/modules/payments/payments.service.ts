@@ -43,6 +43,12 @@ export class PaymentsService {
         ? PaymentStatus.FAILED
         : PaymentStatus.PENDING;
   }
+  private webhookUrl() {
+    const publicUrl = this.config.get<string>("API_PUBLIC_URL")?.replace(/\/$/, "");
+    return publicUrl && !/localhost|127\.0\.0\.1/.test(publicUrl)
+      ? `${publicUrl}/api/payments/webhook`
+      : undefined;
+  }
   private errorMessage(error: any) {
     const response = error?.response?.data;
     const cause = response?.cause?.[0];
@@ -64,6 +70,7 @@ export class PaymentsService {
           description: `Pedido ${order.code} - Pastelaria Recanto`,
           installments: Number(dto.payment.installments || 1),
           payment_method_id: dto.payment.payment_method_id,
+          notification_url: this.webhookUrl(),
           issuer_id: dto.payment.issuer_id
             ? Number(dto.payment.issuer_id)
             : undefined,
