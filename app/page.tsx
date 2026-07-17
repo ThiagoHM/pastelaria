@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, loadSession, saveSession, Session } from "./api";
 import { AdminDashboard } from "./components/admin/AdminDashboard";
 import { MyOrdersModal } from "./components/orders/MyOrdersModal";
@@ -810,6 +810,31 @@ function Checkout({
 }) {
   const [paymentResult,setPaymentResult]=useState<any|null>(null);
   const [paymentError,setPaymentError]=useState("");
+  const payRef=useRef(pay);
+  useEffect(()=>{payRef.current=pay},[pay]);
+  const paymentInitialization=useMemo(
+    ()=>({amount:total,payer:{email:session?.user.email}}),
+    [total,session?.user.email],
+  );
+  const paymentCustomization=useMemo(
+    ()=>({paymentMethods:{bankTransfer:["pix"],creditCard:"all" as const,debitCard:"all" as const,maxInstallments:6}}),
+    [],
+  );
+  const handlePaymentSubmit=useCallback(async(data:any)=>{
+    setPaymentError("");
+    try{
+      const paymentData={...data.formData,payment_type_id:data.paymentType};
+      const result=await payRef.current(paymentData);
+      setPaymentResult(result);
+      return result;
+    }catch(error){
+      setPaymentError((error as Error).message);
+      throw error;
+    }
+  },[]);
+  const handlePaymentError=useCallback((error:any)=>{
+    setPaymentError(error.message||"Não foi possível carregar o pagamento");
+  },[]);
   if(paymentResult && paymentResult.payment?.status !== "approved") {
     const isPix = Boolean(paymentResult.payment?.qrCode);
     return isPix
@@ -875,11 +900,11 @@ function Checkout({
       {paymentError&&<p className="form-error">{paymentError}</p>}
       {mercadoPagoPublicKey ? (
         <Payment
-          initialization={{amount:total,payer:{email:session?.user.email}}}
-          customization={{paymentMethods:{bankTransfer:["pix"],creditCard:"all",debitCard:"all",maxInstallments:6}}}
+          initialization={paymentInitialization}
+          customization={paymentCustomization}
           locale="pt"
-          onSubmit={async(data)=>{setPaymentError("");try{const paymentData={...data.formData,payment_type_id:data.paymentType};const result=await pay(paymentData);setPaymentResult(result);return result}catch(error){setPaymentError((error as Error).message);throw error}}}
-          onError={(error)=>setPaymentError(error.message||"Não foi possível carregar o pagamento")}
+          onSubmit={handlePaymentSubmit}
+          onError={handlePaymentError}
         />
       ) : <p className="form-error">Public Key do Mercado Pago não configurada.</p>}
     </>
