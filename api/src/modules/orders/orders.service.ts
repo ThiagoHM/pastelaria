@@ -2,10 +2,13 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import {
   IsArray,
+  ArrayMaxSize,
   IsEnum,
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
+  MaxLength,
   Min,
   ValidateNested,
 } from "class-validator";
@@ -29,24 +32,28 @@ import {
 import { WhatsAppService } from "../store/whatsapp.service";
 
 class OrderItemDto {
-  @IsString() productId: string;
+  @IsUUID() productId: string;
   @IsInt() @Min(1) quantity: number;
-  @IsArray() ingredientIds: string[] = [];
+  @IsArray() @ArrayMaxSize(50) @IsUUID(undefined, { each: true }) ingredientIds: string[] = [];
+}
+class DeliveryAddressDto {
+  @IsString() @MaxLength(10) cep: string;
+  @IsString() @MaxLength(160) street: string;
+  @IsString() @MaxLength(20) number: string;
+  @IsOptional() @IsString() @MaxLength(120) complement?: string;
 }
 export class CreateOrderDto {
+  @IsArray()
+  @ArrayMaxSize(100)
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
   items: OrderItemDto[];
   @IsEnum(FulfillmentType) fulfillmentType: FulfillmentType;
   @IsEnum(PaymentMethod) paymentMethod: PaymentMethod;
-  @IsOptional() @IsString() observation?: string;
-  @IsOptional() deliveryAddress?: {
-    cep: string;
-    street: string;
-    number: string;
-    complement?: string;
-  };
-  @IsOptional() @IsArray() sauceIds: string[] = [];
+  @IsOptional() @IsString() @MaxLength(500) observation?: string;
+  @IsOptional() @ValidateNested() @Type(() => DeliveryAddressDto)
+  deliveryAddress?: DeliveryAddressDto;
+  @IsOptional() @IsArray() @ArrayMaxSize(30) @IsUUID(undefined, { each: true }) sauceIds: string[] = [];
 }
 export class StatusDto {
   @IsEnum(OrderStatus) status: OrderStatus;
@@ -121,6 +128,15 @@ export class OrdersService {
       dto.fulfillmentType === FulfillmentType.DELIVERY
         ? Number(store?.deliveryFee || 5)
         : 0;
+    const deliveryAddress: Record<string, string> | undefined =
+      dto.fulfillmentType === FulfillmentType.DELIVERY
+        ? {
+            cep: dto.deliveryAddress?.cep || user.cep,
+            street: dto.deliveryAddress?.street || user.street,
+            number: dto.deliveryAddress?.number || user.number,
+            complement: dto.deliveryAddress?.complement || user.complement || "",
+          }
+        : undefined;
     const order = this.orders.create({
       code: `REC-${Date.now().toString().slice(-6)}`,
       user,
@@ -132,15 +148,7 @@ export class OrdersService {
       paymentMethod: dto.paymentMethod,
       observation: dto.observation,
       sauces: sauces.map((s) => ({ id: s.id, name: s.name })),
-      deliveryAddress:
-        dto.fulfillmentType === FulfillmentType.DELIVERY
-          ? dto.deliveryAddress || {
-              cep: user.cep,
-              street: user.street,
-              number: user.number,
-              complement: user.complement || "",
-            }
-          : undefined,
+      deliveryAddress,
       history: [
         Object.assign(new OrderStatusHistory(), {
           status: OrderStatus.PENDING,

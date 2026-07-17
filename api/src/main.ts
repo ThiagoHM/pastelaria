@@ -13,7 +13,14 @@ async function bootstrap() {
     origin: process.env.FRONTEND_URL?.split(",") || true,
     credentials: true,
   });
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      forbidUnknownValues: true,
+      transform: true,
+    }),
+  );
   await app.listen(process.env.PORT || 3001);
 }
 bootstrap();

@@ -1,12 +1,15 @@
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { IsObject } from "class-validator";
+import { Type } from "class-transformer";
+import { IsObject, ValidateNested } from "class-validator";
 import MercadoPagoConfig, { Payment } from "mercadopago";
 import { PaymentStatus } from "../../database/entities";
 import { CreateOrderDto, OrdersService } from "../orders/orders.service";
 
 export class ProcessPaymentDto {
   @IsObject()
+  @ValidateNested()
+  @Type(() => CreateOrderDto)
   order: CreateOrderDto;
   @IsObject()
   payment: {

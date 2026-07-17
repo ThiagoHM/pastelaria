@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
 } from "class-validator";
 import { Repository } from "typeorm";
@@ -12,7 +13,7 @@ import { StoreSettings } from "../../database/entities";
 export class SettingsDto {
   @IsBoolean() isOpen: boolean;
   @IsNumber() @Min(0) deliveryFee: number;
-  @IsOptional() @IsString() message?: string;
+  @IsOptional() @IsString() @MaxLength(160) message?: string;
 }
 @Injectable()
 export class StoreService {

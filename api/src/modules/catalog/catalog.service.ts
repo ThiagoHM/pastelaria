@@ -6,6 +6,8 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsString,
+  MaxLength,
   Min,
 } from "class-validator";
 import { Repository } from "typeorm";
@@ -17,16 +19,16 @@ import {
 } from "../../database/entities";
 
 export class ProductDto {
-  @IsNotEmpty() name: string;
-  @IsNotEmpty() description: string;
+  @IsString() @IsNotEmpty() @MaxLength(120) name: string;
+  @IsString() @IsNotEmpty() @MaxLength(500) description: string;
   @IsNumber() @Min(0) price: number;
   @IsEnum(ProductCategory) category: ProductCategory;
-  @IsOptional() imageUrl?: string;
+  @IsOptional() @IsString() @MaxLength(1000) imageUrl?: string;
   @IsOptional() @IsBoolean() active?: boolean;
 }
 
 export class IngredientDto {
-  @IsNotEmpty() name: string;
+  @IsString() @IsNotEmpty() @MaxLength(120) name: string;
   @IsNumber() @Min(0) additionalPrice: number;
   @IsEnum(IngredientType) type: IngredientType;
   @IsOptional() @IsBoolean() active?: boolean;

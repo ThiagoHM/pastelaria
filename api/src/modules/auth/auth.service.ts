@@ -5,24 +5,31 @@ import {
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
-import { IsEmail, IsNotEmpty, IsOptional, MinLength } from "class-validator";
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from "class-validator";
 import { compare, hash } from "bcryptjs";
 import { Repository } from "typeorm";
 import { User } from "../../database/entities";
 
 export class RegisterDto {
-  @IsEmail() email: string;
-  @IsNotEmpty() fullName: string;
-  @MinLength(6) password: string;
-  @IsNotEmpty() phone: string;
-  @IsNotEmpty() cep: string;
-  @IsNotEmpty() street: string;
-  @IsNotEmpty() number: string;
-  @IsOptional() complement?: string;
+  @IsEmail() @MaxLength(254) email: string;
+  @IsString() @IsNotEmpty() @MaxLength(120) fullName: string;
+  @IsString() @MinLength(6) @MaxLength(128) password: string;
+  @IsString() @IsNotEmpty() @MaxLength(20) phone: string;
+  @IsString() @IsNotEmpty() @MaxLength(10) cep: string;
+  @IsString() @IsNotEmpty() @MaxLength(160) street: string;
+  @IsString() @IsNotEmpty() @MaxLength(20) number: string;
+  @IsOptional() @IsString() @MaxLength(120) complement?: string;
 }
 export class LoginDto {
-  @IsEmail() email: string;
-  @IsNotEmpty() password: string;
+  @IsEmail() @MaxLength(254) email: string;
+  @IsString() @IsNotEmpty() @MaxLength(128) password: string;
 }
 
 @Injectable()

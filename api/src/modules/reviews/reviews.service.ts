@@ -9,6 +9,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -22,7 +23,7 @@ import {
 } from "../../database/entities";
 
 export class CreateReviewDto {
-  @IsString() orderItemId: string;
+  @IsUUID() orderItemId: string;
   @IsInt() @Min(1) @Max(5) rating: number;
   @IsOptional() @IsString() @MaxLength(500) comment?: string;
 }

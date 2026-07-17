@@ -96,8 +96,8 @@ export function AdminDashboard({
     if (!response.ok) throw new Error("Não foi possível enviar a imagem");
     return (await response.json()).imageUrl as string;
   }
-  async function toggleStore(){try{const next={...store,isOpen:!store.isOpen,message:!store.isOpen?"Pastelaria aberta e recebendo pedidos":"Pastelaria fechada no momento"};setStore(await api<any>("/admin/store/settings",{method:"PATCH",body:JSON.stringify(next)},session.accessToken));show(next.isOpen?"Estabelecimento aberto":"Estabelecimento fechado")}catch(e){show((e as Error).message)}}
-  async function saveDeliveryFee(){const fee=Number(deliveryFeeDraft);if(!Number.isFinite(fee)||fee<0)return show("Informe uma taxa de entrega válida");setSaving("delivery");try{const updated=await api<any>("/admin/store/settings",{method:"PATCH",body:JSON.stringify({...store,deliveryFee:fee})},session.accessToken);setStore(updated);setDeliveryFeeDraft(String(updated.deliveryFee));show("Taxa de entrega atualizada")}catch(e){show((e as Error).message)}finally{setSaving(null)}}
+  async function toggleStore(){try{const next={isOpen:!store.isOpen,deliveryFee:Number(store.deliveryFee),message:!store.isOpen?"Pastelaria aberta e recebendo pedidos":"Pastelaria fechada no momento"};setStore(await api<any>("/admin/store/settings",{method:"PATCH",body:JSON.stringify(next)},session.accessToken));show(next.isOpen?"Estabelecimento aberto":"Estabelecimento fechado")}catch(e){show((e as Error).message)}}
+  async function saveDeliveryFee(){const fee=Number(deliveryFeeDraft);if(!Number.isFinite(fee)||fee<0)return show("Informe uma taxa de entrega válida");setSaving("delivery");try{const updated=await api<any>("/admin/store/settings",{method:"PATCH",body:JSON.stringify({isOpen:store.isOpen,deliveryFee:fee,message:store.message})},session.accessToken);setStore(updated);setDeliveryFeeDraft(String(updated.deliveryFee));show("Taxa de entrega atualizada")}catch(e){show((e as Error).message)}finally{setSaving(null)}}
   async function saveEditor(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!editor) return;
