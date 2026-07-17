@@ -51,6 +51,7 @@ export function AdminDashboard({
     [deliveryFeeDraft,setDeliveryFeeDraft]=useState("5"),
     [detail,setDetail]=useState<any|null>(null);
   useEffect(()=>{api<any>("/store/settings").then(value=>{setStore(value);setDeliveryFeeDraft(String(value.deliveryFee))})},[]);
+  useEffect(()=>{if(tab==="Avaliações") void refresh()},[tab]);
   const paidOrders = useMemo(
     () => orders.filter((order) => order.paymentStatus === "APPROVED"),
     [orders],
@@ -202,6 +203,11 @@ export function AdminDashboard({
               onClick={() => setEditor({ kind: "ingredient" })}
             >
               ＋ Novo ingrediente
+            </button>
+          )}
+          {tab === "Avaliações" && (
+            <button className="new" onClick={() => void refresh()}>
+              Atualizar avaliações
             </button>
           )}
         </header>

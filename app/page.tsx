@@ -145,26 +145,16 @@ export default function Home() {
   async function refreshAdmin() {
     if (!session) return;
     try {
-      setOrders(
-        await api<ApiOrder[]>("/admin/orders", {}, session.accessToken),
-      );
-      setProducts(
-        (
-          await api<Product[]>(
-            "/admin/catalog/products",
-            {},
-            session.accessToken,
-          )
-        ).map((x) => ({ ...x, price: Number(x.price) })),
-      );
-      setIngredients(
-        await api<Ingredient[]>(
-          "/admin/catalog/ingredients",
-          {},
-          session.accessToken,
-        ),
-      );
-      setReviews(await api<any[]>("/admin/reviews", {}, session.accessToken));
+      const [orderData, productData, ingredientData, reviewData] = await Promise.all([
+        api<ApiOrder[]>("/admin/orders", {}, session.accessToken),
+        api<Product[]>("/admin/catalog/products", {}, session.accessToken),
+        api<Ingredient[]>("/admin/catalog/ingredients", {}, session.accessToken),
+        api<any[]>("/admin/reviews", {}, session.accessToken),
+      ]);
+      setOrders(orderData);
+      setProducts(productData.map((x) => ({ ...x, price: Number(x.price) })));
+      setIngredients(ingredientData);
+      setReviews(Array.isArray(reviewData) ? reviewData : []);
     } catch (e) {
       show((e as Error).message);
     }
