@@ -185,7 +185,88 @@
   .side nav button::first-letter { font-size: 18px; }
   .tr > *:nth-child(4), .tr > *:nth-child(6) { display: none; }
 }
-@media (max-width: 600px) { .tr > *:nth-child(3) { display: none; } }
+@media (max-width: 600px) {
+  .admin { display: block; }
+  .side {
+    position: sticky;
+    z-index: 30;
+    top: 0;
+    height: auto;
+    min-height: 0;
+    padding: 10px 12px;
+    box-shadow: 0 4px 18px rgb(0 0 0 / 18%);
+  }
+  .side nav {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .side nav::-webkit-scrollbar { display: none; }
+  .side nav button {
+    flex: 0 0 auto;
+    padding: 10px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .side nav button::first-letter { font-size: inherit; }
+  .side-bottom {
+    display: block;
+    margin-top: 8px;
+    border-top: 1px solid #444;
+    padding-top: 6px;
+  }
+  .side-bottom > button {
+    width: 100%;
+    padding: 7px 10px;
+    text-align: center;
+    font-size: 11px;
+  }
+  .admin-user { display: none; }
+  .admin-main > header {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+  .admin-main > header > div:first-child { width: 100%; }
+  .admin-main header h1 { font-size: 32px; }
+  .admin-main > header .store-toggle,
+  .admin-main > header .new {
+    flex: 1 1 145px;
+    min-height: 44px;
+  }
+  .stats { margin-block: 20px; gap: 8px; }
+  .stats > div { padding: 14px; }
+  .order-table {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+  .tr.th { display: none; }
+  .tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 14px 10px;
+    margin-bottom: 12px;
+    border: 1px solid #ded8cd;
+    padding: 16px;
+    background: white;
+  }
+  .tr > * { min-width: 0; }
+  .tr > *:nth-child(3),
+  .tr > *:nth-child(4),
+  .tr > *:nth-child(6) { display: block; }
+  .tr > *:nth-child(3),
+  .tr > *:nth-child(4) { grid-column: 1 / -1; }
+  .tr > *:nth-child(3) { line-height: 1.55; }
+  .tr > *:nth-child(5) { align-self: stretch; }
+  .tr > *:nth-child(6) { width: 100%; min-height: 42px; }
+  .status-select { height: 42px; min-width: 0; }
+  .queue-tabs { margin-top: 18px; }
+  .queue-tabs button { flex: 1 0 auto; padding-inline: 12px; }
+  .ingredient-list > div { gap: 10px; padding: 14px; }
+  .ingredient-list > div > button { grid-column: 1 / -1; width: 100%; }
+}
 
 @keyframes comboSlide {
   from { opacity: 0; transform: scale(1.03); }
