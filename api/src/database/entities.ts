@@ -41,6 +41,7 @@ export enum PaymentMethod {
   PIX = "PIX",
   CREDIT_CARD = "CREDIT_CARD",
   DEBIT_CARD = "DEBIT_CARD",
+  IN_PERSON = "IN_PERSON",
 }
 export enum PaymentStatus {
   PENDING = "PENDING",

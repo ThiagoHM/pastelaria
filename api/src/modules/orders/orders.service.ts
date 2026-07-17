@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import {
   IsArray,
@@ -58,6 +58,9 @@ export class CreateOrderDto {
 export class StatusDto {
   @IsEnum(OrderStatus) status: OrderStatus;
 }
+export class InPersonPaymentDto {
+  @IsEnum(PaymentStatus) status: PaymentStatus;
+}
 
 @Injectable()
 export class OrdersService {
@@ -72,10 +75,12 @@ export class OrdersService {
     private settings: Repository<StoreSettings>,
     private whatsapp: WhatsAppService,
   ) {}
-  async create(userId: string, dto: CreateOrderDto) {
+  async create(userId: string, dto: CreateOrderDto, inPerson = false) {
     const user = await this.users.findOneByOrFail({ id: userId });
     const store = await this.settings.findOne({ where: {} });
-    if (store && !store.isOpen)
+    if (dto.paymentMethod === PaymentMethod.IN_PERSON && !inPerson)
+      throw new BadRequestException("Pagamento presencial disponível apenas para administradores");
+    if (store && !store.isOpen && !inPerson)
       throw new Error("A Pastelaria Recanto está fechada no momento");
     const items: OrderItem[] = [];
     const sauces = dto.sauceIds?.length
@@ -165,9 +170,33 @@ export class OrdersService {
   }
   all() {
     return this.orders.find({
-      where: { paymentStatus: PaymentStatus.APPROVED },
+      where: [
+        { paymentStatus: PaymentStatus.APPROVED },
+        { paymentMethod: PaymentMethod.IN_PERSON },
+      ],
       order: { createdAt: "DESC" },
     });
+  }
+  createInPerson(adminId: string, dto: CreateOrderDto) {
+    return this.create(adminId, {
+      ...dto,
+      fulfillmentType: FulfillmentType.PICKUP,
+      paymentMethod: PaymentMethod.IN_PERSON,
+      deliveryAddress: undefined,
+    }, true);
+  }
+  async inPersonPayment(id: string, status: PaymentStatus) {
+    if (![PaymentStatus.PENDING, PaymentStatus.APPROVED].includes(status))
+      throw new BadRequestException("Status de pagamento inválido");
+    const order = await this.orders.findOne({ where: { id } });
+    if (!order) throw new NotFoundException();
+    if (order.paymentMethod !== PaymentMethod.IN_PERSON)
+      throw new BadRequestException("Este pedido não é presencial");
+    order.paymentStatus = status;
+    order.paymentStatusDetail = status === PaymentStatus.APPROVED
+      ? "Pago no estabelecimento"
+      : "Pagamento pendente no estabelecimento";
+    return this.orders.save(order);
   }
   async byId(id: string, user: { sub: string; role: UserRole }) {
     const order = await this.orders.findOne({ where: { id } });

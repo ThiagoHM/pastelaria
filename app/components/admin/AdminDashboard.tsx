@@ -52,21 +52,21 @@ export function AdminDashboard({
     [detail,setDetail]=useState<any|null>(null);
   useEffect(()=>{api<any>("/store/settings").then(value=>{setStore(value);setDeliveryFeeDraft(String(value.deliveryFee))})},[]);
   useEffect(()=>{if(tab==="Avaliações") void refresh()},[tab]);
-  const paidOrders = useMemo(
-    () => orders.filter((order) => order.paymentStatus === "APPROVED"),
+  const listedOrders = useMemo(
+    () => orders.filter((order) => order.paymentStatus === "APPROVED" || order.paymentMethod === "IN_PERSON"),
     [orders],
   );
   const visible = useMemo(
     () =>
-      paidOrders.filter((o) =>
+      listedOrders.filter((o) =>
         queue === "done"
           ? ["COMPLETED", "CANCELLED"].includes(o.status)
           : !["COMPLETED", "CANCELLED"].includes(o.status),
       ),
-    [paidOrders, queue],
+    [listedOrders, queue],
   );
-  const revenue = paidOrders
-    .filter((o) => o.status === "COMPLETED")
+  const revenue = listedOrders
+    .filter((o) => o.status === "COMPLETED" && o.paymentStatus === "APPROVED")
     .reduce((s, o) => s + Number(o.total), 0);
   async function saveStatus(order: any) {
     const status = drafts[order.id] || order.status;
@@ -85,6 +85,16 @@ export function AdminDashboard({
     } finally {
       setSaving(null);
     }
+  }
+  async function toggleInPersonPayment(order: any) {
+    const status = order.paymentStatus === "APPROVED" ? "PENDING" : "APPROVED";
+    setSaving(`payment-${order.id}`);
+    try {
+      await api(`/admin/orders/${order.id}/payment`, { method: "PATCH", body: JSON.stringify({ status }) }, session.accessToken);
+      show(status === "APPROVED" ? "Pedido marcado como pago" : "Pedido marcado como não pago");
+      await refresh();
+    } catch (e) { show((e as Error).message); }
+    finally { setSaving(null); }
   }
   async function uploadImage(file: File) {
     const data = new FormData();
@@ -216,7 +226,7 @@ export function AdminDashboard({
             <span>Em andamento</span>
             <b>
               {
-                paidOrders.filter(
+                listedOrders.filter(
                   (o) => !["COMPLETED", "CANCELLED"].includes(o.status),
                 ).length
               }
@@ -226,14 +236,14 @@ export function AdminDashboard({
             <span>Atenção</span>
             <b>
               {
-                paidOrders.filter((o) => ["DELAYED", "PROBLEM"].includes(o.status))
+                listedOrders.filter((o) => ["DELAYED", "PROBLEM"].includes(o.status))
                   .length
               }
             </b>
           </div>
           <div>
             <span>Concluídos</span>
-            <b>{paidOrders.filter((o) => o.status === "COMPLETED").length}</b>
+            <b>{listedOrders.filter((o) => o.status === "COMPLETED").length}</b>
           </div>
           <div>
             <span>Faturamento concluído</span>
@@ -255,7 +265,7 @@ export function AdminDashboard({
                 Em andamento{" "}
                 <span>
                   {
-                    paidOrders.filter(
+                    listedOrders.filter(
                       (o) => !["COMPLETED", "CANCELLED"].includes(o.status),
                     ).length
                   }
@@ -268,7 +278,7 @@ export function AdminDashboard({
                 Concluídos{" "}
                 <span>
                   {
-                    paidOrders.filter((o) =>
+                    listedOrders.filter((o) =>
                       ["COMPLETED", "CANCELLED"].includes(o.status),
                     ).length
                   }
@@ -314,9 +324,18 @@ export function AdminDashboard({
                   </span>
                   <b>
                     {money(o.total)}
-                    <small className="mt-1 block text-[10px] font-bold uppercase tracking-wide text-green-700">
-                      &#10003; Pagamento concluído
-                    </small>
+                    {o.paymentMethod === "IN_PERSON" ? (
+                      <button
+                        type="button"
+                        className={`mt-2 block border px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${o.paymentStatus === "APPROVED" ? "border-green-700 text-green-700" : "border-amber-600 text-amber-700"}`}
+                        disabled={saving === `payment-${o.id}`}
+                        onClick={() => toggleInPersonPayment(o)}
+                      >
+                        {saving === `payment-${o.id}` ? "Salvando..." : o.paymentStatus === "APPROVED" ? "Pago · marcar não pago" : "Não pago · marcar pago"}
+                      </button>
+                    ) : (
+                      <small className="mt-1 block text-[10px] font-bold uppercase tracking-wide text-green-700">&#10003; Pagamento concluído</small>
+                    )}
                   </b>
                   <select
                     className={`status-select state-${drafts[o.id] || o.status}`}

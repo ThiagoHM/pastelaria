@@ -164,7 +164,7 @@ export default function Home() {
     setTimeout(() => setToast(""), 2600);
   }
   function add(p: Product) {
-    if(!store.isOpen){show("A Pastelaria Recanto está fechada no momento");return}
+    if(!store.isOpen && session?.user.role !== "ADMIN"){show("A Pastelaria Recanto está fechada no momento");return}
     setCart((c) =>
       c.some((i) => i.id === p.id)
         ? c.map((i) => (i.id === p.id ? { ...i, qty: i.qty + 1 } : i))
@@ -173,7 +173,7 @@ export default function Home() {
     show(`${p.name} foi para a sacola`);
   }
   function addCustomPastel(base: Product, selected: Ingredient[]) {
-    if (!store.isOpen) {
+    if (!store.isOpen && session?.user.role !== "ADMIN") {
       show("A Pastelaria Recanto está fechada no momento");
       return;
     }
@@ -272,6 +272,33 @@ export default function Home() {
       show((e as Error).message);
       throw e;
     }
+  }
+  async function createInPersonOrder() {
+    if (!session || session.user.role !== "ADMIN")
+      throw new Error("Apenas o administrador pode criar pedidos presenciais");
+    const order = await api<ApiOrder>(
+      "/admin/orders/in-person",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          items: cart.map((i) => ({ productId: i.productId ?? i.id, quantity: i.qty, ingredientIds: i.ingredientIds ?? [] })),
+          fulfillmentType: "PICKUP",
+          paymentMethod: "IN_PERSON",
+          observation,
+          sauceIds: selectedSauceIds,
+        }),
+      },
+      session.accessToken,
+    );
+    setCart([]);
+    setSelectedSauceIds([]);
+    setObservation("");
+    setCheckout(false);
+    setCartOpen(false);
+    setMode("admin");
+    await refreshAdmin();
+    show(`Pedido ${order.code} criado como não pago`);
+    return order;
   }
   const combos=products.filter(p=>p.category==="COMBO");
   const filtered = products.filter(
@@ -542,6 +569,7 @@ export default function Home() {
                 setOtherAddress={setOtherAddress}
                 back={() => setCheckout(false)}
                 pay={processPayment}
+                createInPerson={createInPersonOrder}
               />
             )}
           </aside>
@@ -788,6 +816,7 @@ function Checkout({
   setOtherAddress,
   back,
   pay,
+  createInPerson,
 }: {
   delivery: string;
   setDelivery: (v: string) => void;
@@ -807,9 +836,11 @@ function Checkout({
   setOtherAddress:(v:{cep:string;street:string;number:string;complement:string})=>void;
   back: () => void;
   pay: (data:any) => Promise<any>;
+  createInPerson: () => Promise<any>;
 }) {
   const [paymentResult,setPaymentResult]=useState<any|null>(null);
   const [paymentError,setPaymentError]=useState("");
+  const [creatingInPerson,setCreatingInPerson]=useState(false);
   const payRef=useRef(pay);
   useEffect(()=>{payRef.current=pay},[pay]);
   const paymentInitialization=useMemo(
@@ -895,6 +926,27 @@ function Checkout({
         <span>Total do pedido</span>
         <b>{money(total)}</b>
       </div>
+      {session?.user.role === "ADMIN" && (
+        <div className="mb-5 border-2 border-recanto-red bg-[#fff7ed] p-4">
+          <p className="eyebrow mb-2">PEDIDO NO ESTABELECIMENTO</p>
+          <h4 className="mt-0">Pagamento presencial</h4>
+          <p className="text-sm leading-6 text-[#666]">O pedido entra imediatamente no painel como não pago. Use a observação acima para informar a mesa ou o nome do cliente.</p>
+          <button
+            type="button"
+            className="primary wide"
+            disabled={creatingInPerson}
+            onClick={async () => {
+              setCreatingInPerson(true);
+              setPaymentError("");
+              try { await createInPerson(); }
+              catch (error) { setPaymentError((error as Error).message); }
+              finally { setCreatingInPerson(false); }
+            }}
+          >
+            {creatingInPerson ? "Criando pedido..." : "Confirmar pedido presencial"}
+          </button>
+        </div>
+      )}
       <h4>Pagamento seguro</h4>
       {mercadoPagoTestMode&&<p className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-xs font-semibold text-amber-900">Ambiente de testes: cartões reais não são aprovados. Use um cartão de teste do Mercado Pago; nenhuma cobrança real será realizada.</p>}
       {paymentError&&<p className="form-error">{paymentError}</p>}

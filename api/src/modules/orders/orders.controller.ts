@@ -9,7 +9,7 @@ import {
 } from "@nestjs/common";
 import { UserRole } from "../../database/entities";
 import { CurrentUser, JwtGuard, Roles, RolesGuard } from "../auth/auth.guards";
-import { CreateOrderDto, OrdersService, StatusDto } from "./orders.service";
+import { CreateOrderDto, InPersonPaymentDto, OrdersService, StatusDto } from "./orders.service";
 @UseGuards(JwtGuard)
 @Controller("orders")
 export class OrdersController {
@@ -31,6 +31,18 @@ export class AdminOrdersController {
   constructor(private service: OrdersService) {}
   @Get() all() {
     return this.service.all();
+  }
+  @Post("in-person") createInPerson(
+    @CurrentUser() user: any,
+    @Body() dto: CreateOrderDto,
+  ) {
+    return this.service.createInPerson(user.sub, dto);
+  }
+  @Patch(":id/payment") payment(
+    @Param("id") id: string,
+    @Body() dto: InPersonPaymentDto,
+  ) {
+    return this.service.inPersonPayment(id, dto.status);
   }
   @Patch(":id/status") status(@Param("id") id: string, @Body() dto: StatusDto) {
     return this.service.status(id, dto.status);
