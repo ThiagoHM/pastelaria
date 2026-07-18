@@ -43,8 +43,10 @@ export class PaymentsService {
   }
   private payerEmail(userEmail?: string) {
     if (!this.accessToken.startsWith("TEST-")) return userEmail;
-    return this.config.get<string>("MERCADO_PAGO_TEST_PAYER_EMAIL") ||
-      "test@testuser.com";
+    const configured = this.config.get<string>("MERCADO_PAGO_TEST_PAYER_EMAIL");
+    return configured && !/@testuser\.com$/i.test(configured)
+      ? configured
+      : "comprador.recanto.qa@gmail.com";
   }
   private localStatus(status?: string) {
     return status === "approved"
