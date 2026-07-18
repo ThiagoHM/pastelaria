@@ -493,7 +493,7 @@ export default function Home() {
           <br />
           Praça Nove de Julho · Centro · Fartura/SP · CEP 18870-000
         </p>
-        <a className="border-b border-[#df4534] pb-1 text-sm font-extrabold text-white transition-colors hover:text-[#f2b83f]" href="https://www.instagram.com/pastelariorecanto" target="_blank" rel="noreferrer">Instagram ↗</a>
+        <a className="border-b border-[#df4534] pb-1 text-sm font-extrabold text-white transition-colors hover:text-[#f2b83f]" href="https://www.instagram.com/pastelariadofio?igsh=MXRoYXFxcmw2YWt6eA==" target="_blank" rel="noreferrer">Instagram ↗</a>
       </footer>
       {cartOpen && (
         <div className="overlay" onClick={() => setCartOpen(false)}>
