@@ -29,15 +29,22 @@ export class ProcessPaymentDto {
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
   private client: Payment;
+  private readonly accessToken: string;
   constructor(
     private config: ConfigService,
     private orders: OrdersService,
   ) {
+    this.accessToken = this.config.getOrThrow("MERCADO_PAGO_ACCESS_TOKEN");
     this.client = new Payment(
       new MercadoPagoConfig({
-        accessToken: this.config.getOrThrow("MERCADO_PAGO_ACCESS_TOKEN"),
+        accessToken: this.accessToken,
       }),
     );
+  }
+  private payerEmail(userEmail?: string) {
+    if (!this.accessToken.startsWith("TEST-")) return userEmail;
+    return this.config.get<string>("MERCADO_PAGO_TEST_PAYER_EMAIL") ||
+      "test@testuser.com";
   }
   private localStatus(status?: string) {
     return status === "approved"
@@ -79,7 +86,7 @@ export class PaymentsService {
             : undefined,
           external_reference: order.id,
           payer: {
-            email: dto.payment.payer?.email || user.email,
+            email: this.payerEmail(dto.payment.payer?.email || user.email),
             identification: dto.payment.payer?.identification,
           },
         },

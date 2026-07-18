@@ -844,7 +844,7 @@ function Checkout({
   const payRef=useRef(pay);
   useEffect(()=>{payRef.current=pay},[pay]);
   const paymentInitialization=useMemo(
-    ()=>({amount:total,payer:{email:session?.user.email}}),
+    ()=>({amount:total,payer:{email:mercadoPagoTestMode ? "test@testuser.com" : session?.user.email}}),
     [total,session?.user.email],
   );
   const paymentCustomization=useMemo(
