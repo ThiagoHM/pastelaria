@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import {
   IsBoolean,
@@ -59,7 +59,8 @@ export class CatalogService {
   }
 
   async removeProduct(id: string) {
-    await this.products.update(id, { active: false });
+    const result = await this.products.delete(id);
+    if (!result.affected) throw new NotFoundException("Produto não encontrado");
     return { success: true };
   }
 

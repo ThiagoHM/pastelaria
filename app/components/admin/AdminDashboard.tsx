@@ -160,6 +160,28 @@ export function AdminDashboard({
       setSaving(null);
     }
   }
+  async function deleteProduct() {
+    if (!editor?.item || editor.kind !== "product") return;
+    const confirmed = window.confirm(
+      `Excluir "${editor.item.name}" do cardápio? O produto deixará de aparecer para os clientes.`,
+    );
+    if (!confirmed) return;
+    setSaving("delete-product");
+    try {
+      await api(
+        `/admin/catalog/products/${editor.item.id}`,
+        { method: "DELETE" },
+        session.accessToken,
+      );
+      setEditor(null);
+      await refresh();
+      show("Produto excluído do cardápio");
+    } catch (e) {
+      show((e as Error).message);
+    } finally {
+      setSaving(null);
+    }
+  }
   return (
     <main className="admin">
       <aside className="side">
@@ -551,6 +573,16 @@ export function AdminDashboard({
                   ? "Salvar alterações"
                   : "Cadastrar"}
             </button>
+            {editor.kind === "product" && editor.item && (
+              <button
+                type="button"
+                className="mt-3 w-full border border-red-700 bg-white p-3 font-bold text-red-700 hover:bg-red-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={saving === "delete-product" || saving === "editor"}
+                onClick={deleteProduct}
+              >
+                {saving === "delete-product" ? "Excluindo..." : "Excluir produto"}
+              </button>
+            )}
           </form>
         </div>
       )}
