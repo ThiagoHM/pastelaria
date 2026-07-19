@@ -45,6 +45,9 @@ type ApiOrder = {
   id: string;
   code: string;
   status: string;
+  paymentStatus: "PENDING" | "APPROVED" | "FAILED";
+  paymentMethod: string;
+  paymentStatusDetail?: string;
   fulfillmentType: string;
   total: number;
   observation?: string;
@@ -111,6 +114,11 @@ export default function Home() {
   useEffect(() => {
     if (session?.user.role === "ADMIN" && mode === "admin") refreshAdmin();
   }, [session, mode]);
+  useEffect(() => {
+    if (session?.user.role !== "ADMIN" || mode !== "admin") return;
+    const timer = setInterval(() => void refreshAdmin(), 10000);
+    return () => clearInterval(timer);
+  }, [session?.accessToken, session?.user.role, mode]);
   useEffect(() => {
     if (!currentOrder || !session) return;
     const timer = setInterval(async () => {

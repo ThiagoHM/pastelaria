@@ -13,6 +13,11 @@ const labels: Record<string, string> = {
 };
 const money = (v: number) =>
   Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const paymentLabels: Record<string, string> = {
+  PENDING: "Pagamento em análise",
+  APPROVED: "Pagamento aprovado",
+  FAILED: "Pagamento não aprovado",
+};
 export function MyOrdersModal({
   orders,
   close,
@@ -82,12 +87,15 @@ export function MyOrdersModal({
                   </strong>
                   <b>{money(o.total)}</b>
                 </div>
-                {!["COMPLETED", "CANCELLED"].includes(o.status) && (
+                <div className={`mt-3 border px-3 py-2 text-xs font-bold ${o.paymentStatus === "APPROVED" ? "border-green-200 bg-green-50 text-green-700" : o.paymentStatus === "FAILED" ? "border-red-200 bg-red-50 text-red-700" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
+                  {paymentLabels[o.paymentStatus] || "Pagamento em análise"}
+                </div>
+                {o.paymentStatus === "APPROVED" && !["COMPLETED", "CANCELLED"].includes(o.status) && (
                   <button className="outline wide" onClick={() => track(o)}>
                     Acompanhar progresso →
                   </button>
                 )}
-                {o.status === "COMPLETED" && (
+                {o.paymentStatus === "APPROVED" && o.status === "COMPLETED" && (
                   <div className="mt-3 grid gap-2">
                     {o.items.map((item:any) => reviewedItemIds.includes(item.id) ? (
                       <span key={item.id} className="text-xs text-[#777]">✓ {item.name} avaliado</span>
