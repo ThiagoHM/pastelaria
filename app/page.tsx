@@ -17,7 +17,13 @@ const paymentStatusMessage = (status?: string, detail?: string) => {
   if (status === "rejected")
     return `Pagamento recusado pelo Mercado Pago${detail ? ` (${detail})` : ""}. Confira os dados ou use outro cartão.`;
   if (status === "cancelled") return "Pagamento cancelado. Tente novamente.";
-  return "Pagamento em análise. O pedido aparecerá para a pastelaria assim que for aprovado.";
+  if (status === "in_process" && detail === "pending_contingency")
+    return "O Mercado Pago está processando este pagamento por contingência. Aguarde alguns minutos e consulte novamente.";
+  if (status === "in_process" && detail === "pending_review_manual")
+    return "O Mercado Pago colocou este pagamento em revisão manual.";
+  if (status === "pending")
+    return `Pagamento pendente no Mercado Pago${detail ? ` (${detail})` : ""}.`;
+  return `Pagamento em análise. O pedido aparecerá para a pastelaria assim que for aprovado${detail ? ` (detalhe: ${detail})` : ""}.`;
 };
 
 type Product = {
@@ -972,7 +978,7 @@ function Checkout({
 }
 
 function CardPending({result,back}:{result:any;back:()=>void}){
-  return <div className="min-h-full py-8 text-center"><p className="eyebrow">PAGAMENTO COM CARTÃO</p><h2>Pagamento em análise</h2><p className="mx-auto max-w-md text-sm leading-6 text-[#666]">{paymentStatusMessage(result.payment?.status,result.payment?.statusDetail)}</p><p className="mt-4 text-xs text-[#777]">O pedido ainda não foi enviado para preparação. Quando o Mercado Pago aprovar, ele será liberado automaticamente no painel administrativo.</p><button type="button" className="outline wide mt-6" onClick={back}>Tentar outro pagamento</button></div>;
+  return <div className="min-h-full py-8 text-center"><p className="eyebrow">PAGAMENTO COM CARTÃO</p><h2>Pagamento em análise</h2><p className="mx-auto max-w-md text-sm leading-6 text-[#666]">{paymentStatusMessage(result.payment?.status,result.payment?.statusDetail)}</p><div className="mx-auto mt-4 max-w-md border border-recanto-line bg-white p-3 text-left text-xs text-[#666]"><b className="block text-recanto-dark">Retorno do Mercado Pago</b><span className="mt-1 block">Status: {result.payment?.status || "não informado"}</span><span className="mt-1 block">Detalhe: {result.payment?.statusDetail || "não informado"}</span><span className="mt-1 block">Transação: {result.payment?.id || "não informada"}</span></div><p className="mt-4 text-xs text-[#777]">O pedido ainda não foi enviado para preparação. Quando o Mercado Pago aprovar, ele será liberado automaticamente no painel administrativo.</p><button type="button" className="outline wide mt-6" onClick={back}>Tentar outro pagamento</button></div>;
 }
 
 function PixPending({result}:{result:any}){

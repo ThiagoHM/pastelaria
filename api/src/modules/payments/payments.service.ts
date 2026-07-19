@@ -94,6 +94,9 @@ export class PaymentsService {
         },
         requestOptions: { idempotencyKey: order.id },
       });
+      this.logger.log(
+        `Pagamento ${payment.id} do pedido ${order.code}: ${payment.status}/${payment.status_detail}`,
+      );
       const saved = await this.orders.payment(
         order.id,
         String(payment.id),
