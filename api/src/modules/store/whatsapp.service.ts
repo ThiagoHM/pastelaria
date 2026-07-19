@@ -1,6 +1,8 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 @Injectable()
 export class WhatsAppService {
+  private readonly logger = new Logger(WhatsAppService.name);
+
   async status(phone: string, name: string, code: string, status: string) {
     const token = process.env.WHATSAPP_TOKEN,
       phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
@@ -15,7 +17,7 @@ export class WhatsAppService {
     const raw = phone.replace(/\D/g, "").replace(/^0+/, "");
     const to = raw.startsWith("55") ? raw : `55${raw}`;
     const response = await fetch(
-      `https://graph.facebook.com/v22.0/${phoneId}/messages`,
+      `https://graph.facebook.com/v25.0/${phoneId}/messages`,
       {
         method: "POST",
         headers: {
@@ -30,6 +32,16 @@ export class WhatsAppService {
         }),
       },
     );
-    return response.ok;
+    const result = await response.json().catch(() => null) as any;
+    if (!response.ok) {
+      this.logger.error(
+        `WhatsApp recusou a mensagem para final ${to.slice(-4)}: ${response.status} ${JSON.stringify(result?.error || result)}`,
+      );
+      return false;
+    }
+    this.logger.log(
+      `Mensagem WhatsApp ${result?.messages?.[0]?.id || "sem-id"} aceita para final ${to.slice(-4)}`,
+    );
+    return true;
   }
 }
